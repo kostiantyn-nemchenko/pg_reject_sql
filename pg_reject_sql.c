@@ -33,19 +33,19 @@ reject_sql(PlannedStmt *pstmt,
             {
                 ereport(ERROR,
 			            (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
-			             errmsg("user %s is not permitted to execute ALTER SYSTEM", 
+			             errmsg("user %s is not permitted to execute ALTER SYSTEM",
                                 current_user)));
             }
             return;
         }
         default:
-			break;
+            break;
     }
 
 	if (prev_utility_hook)
     {
 		(*prev_utility_hook) (pstmt, queryString,
-                              context, params, queryEnv, 
+                              context, params, queryEnv,
                               dest, completionTag);
     }
 	else
