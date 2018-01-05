@@ -12,23 +12,36 @@ void _PG_fini(void);
 static ProcessUtility_hook_type prev_utility_hook = NULL;
 
 static void
-reject_sql(PlannedStmt *pstmt,
+reject_sql(
+#if (PG_VERSION_NUM >= 100000)
+           PlannedStmt *pstmt,
+#else
+           Node *parsetree,
+#endif  /* PG_VERSION_NUM */
            const char *queryString,
            ProcessUtilityContext context,
            ParamListInfo params,
+#if (PG_VERSION_NUM >= 100000)
            QueryEnvironment *queryEnv,
+#endif  /* PG_VERSION_NUM */
            DestReceiver *dest,
            char *completionTag)
 {
+#if (PG_VERSION_NUM >= 100000)
     Node *parsetree = pstmt->utilityStmt;
-    
+#endif
+
     switch (nodeTag(parsetree))
     {
         /* Catch ALTER SYSTEM statement */
         case T_AlterSystemStmt:
         {
-            const char *current_user = GetUserNameFromId(GetUserId(), false);
-            
+            const char *current_user = GetUserNameFromId(GetUserId()
+#if (PG_VERSION_NUM >= 90500)
+            , false
+#endif
+                                                        );
+
             if (strcmp(current_user, ALLOWED_USER) != 0)
             {
                 ereport(ERROR,
@@ -41,22 +54,40 @@ reject_sql(PlannedStmt *pstmt,
         default:
             break;
     }
-    
+
     if (prev_utility_hook)
     {
-        (*prev_utility_hook) (pstmt, queryString,
-                              context, params, queryEnv,
+        (*prev_utility_hook) (
+#if (PG_VERSION_NUM >= 100000)
+                              pstmt,
+#else
+                              parsetree,
+#endif  /* PG_VERSION_NUM */
+                              queryString,
+                              context, params,
+#if (PG_VERSION_NUM >= 100000)
+                              queryEnv,
+#endif  /* PG_VERSION_NUM */
                               dest, completionTag);
     }
     else
     {
-        standard_ProcessUtility(pstmt, queryString,
-                                context, params, queryEnv,
+        standard_ProcessUtility(
+#if (PG_VERSION_NUM >= 100000)
+                                pstmt,
+#else
+                                parsetree,
+#endif  /* PG_VERSION_NUM */
+                                queryString,
+                                context, params,
+#if (PG_VERSION_NUM >= 100000)
+                                queryEnv,
+#endif  /* PG_VERSION_NUM */
                                 dest, completionTag);
     }
 }
 
-void 
+void
 _PG_init(void)
 {
     prev_utility_hook = ProcessUtility_hook;
