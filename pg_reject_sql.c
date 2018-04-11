@@ -49,7 +49,7 @@ reject_sql(
                          errmsg("user %s is not permitted to execute ALTER SYSTEM",
                                 current_user)));
             }
-            return;
+            break;
         }
         default:
             break;
